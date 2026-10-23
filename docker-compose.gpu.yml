@@ -1,0 +1,13 @@
+version: "3.9"
+# Overlay this file for NVIDIA GPU support:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

@@ -1,0 +1,69 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env.local
+
+# ── Environment & secrets ──────────────────────────────────────────────────────
+.env
+*.env
+!.env.example
+
+# ── Runtime data (generated, should not be committed) ─────────────────────────
+backend/db/
+backend/uploads/
+backend/reports/
+backend/chroma_db/
+backend/*.pdf
+backend/*.png
+backend/*.jpg
+backend/*.jpeg
+
+# ── Node / Next.js ────────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── OS & editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Generated / personal files ──────────────────────────────────────────
+*.docx
+*.pdf
+generate_report.py
+Info.txt
+info2.txt
+RENAME_INSTRUCTIONS.txt

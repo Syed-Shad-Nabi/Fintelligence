@@ -1,0 +1,12 @@
+{
+  "source": "real_documents",
+  "samples": 820,
+  "features": 10,
+  "label_distribution": {
+    "0": 298,
+    "1": 246,
+    "2": 276
+  },
+  "risk_classifier_accuracy": 0.9512,
+  "risk_classifier_weighted_f1": 0.9514
+}

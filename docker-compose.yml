@@ -1,0 +1,99 @@
+version: "3.9"
+
+services:
+  # ─── Ollama Runtime ──────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: fintelligence-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ─── Model Bootstrap (pulls models — fits 6 GB VRAM) ─────────────────────────
+  # Default: mistral (7B Q4_0, ~4.1 GB VRAM).
+  # To use a lighter model, change MODEL below and re-run:
+  #   MODEL=phi3:mini       (~2.3 GB VRAM)
+  #   MODEL=llama3.2:3b     (~2.0 GB VRAM)
+  #   MODEL=mistral         (~4.1 GB VRAM) ← default
+  model-init:
+    image: ollama/ollama:latest
+    container_name: fintelligence-model-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - LLM_MODEL=${LLM_MODEL:-llama3.1:8b}
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "ollama pull ${LLM_MODEL:-llama3.1:8b} || ollama pull llama3.1:8b;
+       ollama pull ${VISION_MODEL:-llava-phi3} || ollama pull llava-phi3;
+       echo 'Models ready: '${LLM_MODEL:-llama3.1:8b}' + '${VISION_MODEL:-llava-phi3}"
+    restart: "no"
+
+  # ─── FastAPI Backend ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fintelligence-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_reports:/app/reports
+      - backend_uploads:/app/uploads
+      - backend_chroma:/app/chroma_db
+      - backend_db:/app/db
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - JWT_SECRET=fintelligence-super-secret-jwt-key-change-in-production
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - DATABASE_URL=sqlite:////app/db/fintelligence.db
+      - PYTHONUNBUFFERED=1
+      - CHROMA_DB_PATH=/app/chroma_db
+      - REPORTS_DIR=/app/reports
+      - UPLOADS_DIR=/app/uploads
+      # ── Single-model config for 6 GB VRAM ──────────────────────────────
+      - LLM_MODEL=${LLM_MODEL:-llama3.1:8b}
+      - LLM_CTX=4096
+      - VISION_MODEL=${VISION_MODEL:-llava-phi3}   # vision model for PDF/image extraction
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── Next.js Frontend ────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fintelligence-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  ollama_models:
+  backend_reports:
+  backend_uploads:
+  backend_chroma:
+  backend_db:

@@ -1,0 +1,5 @@
+FROM llava-phi3
+
+SYSTEM You extract financial statement tables and return strict JSON with accurate numeric values.
+
+PARAMETER temperature 0.05
